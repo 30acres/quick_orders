@@ -7,7 +7,7 @@ module QuickOrders
     def self.all_stored_orders
       csv_string = CSV.generate do |csv|
         RawDatum.all.each do |order|
-          binding.pry
+          # binding.pry
           csv << ShopifyCsv.new(order).rows_builder
         end
       end
