@@ -6,11 +6,12 @@ module QuickOrders
       @row_type = check_row_type(row_type)
     end
 
-    def self.all_stored_orders
+    def self.all_stored_orders(client)
+      client = Shop.find(client)
       csv_string = CSV.generate do |csv|
         csv << self.csv_rows
           # binding.pry
-        RawDatum.order("data->>'created_at' DESC").each do |order|
+        client.rawDatum.order("data->>'created_at' DESC").each do |order|
           order['data']['line_items'].each_with_index do |order_line_item, index|
             csv << ShopifyCsv.new(order,index,index).rows_builder
           end
