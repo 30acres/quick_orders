@@ -7,7 +7,7 @@ module QuickOrders
   require "csv/order_row"  
 
   def self.all_orders_from_source
-    ShopifyAPI::Order.all(params: { limit: 250 })
+    ShopifyAPI::Order.find(:all, params: { limit: 250 })
   end
 
   def self.dump_orders(client)
