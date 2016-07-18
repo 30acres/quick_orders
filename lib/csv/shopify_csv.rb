@@ -1,30 +1,32 @@
 module QuickOrders
   class ShopifyCsv
-    def initialize(order)
-      @order = order
+    def initialize(order_row,row_type,index)
+      @order_row = order_row
+      @index = index
+      @row_type = check_row_type(row_type)
     end
 
     def self.all_stored_orders
       csv_string = CSV.generate do |csv|
-        RawDatum.all.each do |order|
+        csv << self.csv_rows
           # binding.pry
-          csv << ShopifyCsv.new(order).rows_builder
+        RawDatum.order("data->>'created_at' DESC").each do |order|
+          order['data']['line_items'].each_with_index do |order_line_item, index|
+            csv << ShopifyCsv.new(order,index,index).rows_builder
+          end
         end
       end
       csv_string
     end
 
     def rows_builder
-      rows = []
-      #binding.pry
-      @order.data['line_items'].each_with_index do |order_row, index|
-        rows << OrderRow.new(@order, order_row,index).row
-      end
-      rows
+      row = []
+      row << OrderRow.new(@order_row, @row_type, @index).row
+      row
     end
 
 
-    def csv_rows
+    def self.csv_rows
       [
         'Name',
         'Email',
@@ -76,10 +78,6 @@ module QuickOrders
         'Payment Reference',
         'Refunded Amount',
         'Vendor',
-        'Outstanding Balance',
-        'Employee',
-        'Location',
-        'Device ID',
         'Id',
         'Tags',
         'Risk Level',
@@ -98,181 +96,15 @@ module QuickOrders
       ]
     end
 
-    #   {"id"=>2426648515,
-    #  "email"=>"jonny@30acres.com.au",
-    #  "closed_at"=>nil,
-    #  "created_at"=>"2016-02-14T22:49:15+11:00",
-    #  "updated_at"=>"2016-02-14T22:49:16+11:00",
-    #  "number"=>6,
-    #  "note"=>"",
-    #  "token"=>"de256d4bf21ec9294aa6e64e6d6a6a45",
-    #  "gateway"=>"bogus",
-    #  "test"=>true,
-    #  "total_price"=>"31.34",
-    #  "subtotal_price"=>"19.40",
-    #  "total_weight"=>200,
-    #  "total_tax"=>"1.94",
-    #  "taxes_included"=>false,
-    #  "currency"=>"AUD",
-    #  "financial_status"=>"authorized",
-    #  "confirmed"=>true,
-    #  "total_discounts"=>"0.60",
-    #  "total_line_items_price"=>"20.00",
-    #  "cart_token"=>"40595a756ceb03413f17ae37f3c29bd9",
-    #  "buyer_accepts_marketing"=>false,
-    #  "name"=>"#1006",
-    #  "referring_site"=>"",
-    #  "landing_site"=>"/",
-    #  "cancelled_at"=>nil,
-    #  "cancel_reason"=>nil,
-    #  "total_price_usd"=>"22.28",
-    #  "checkout_token"=>"90907be3c8dd09669ebd2e49a2093770",
-    #  "reference"=>nil,
-    #  "user_id"=>nil,
-    #  "location_id"=>nil,
-    #  "source_identifier"=>nil,
-    #  "source_url"=>nil,
-    #  "processed_at"=>"2016-02-14T22:49:15+11:00",
-    #  "device_id"=>nil,
-    #  "browser_ip"=>"203.40.59.47",
-    #  "landing_site_ref"=>nil,
-    #  "order_number"=>1006,
-    #  "discount_codes"=>[{"code"=>"sale", "amount"=>"0.60", "type"=>"percentage"}],
-    #  "note_attributes"=>[],
-    #  "payment_gateway_names"=>["bogus"],
-    #  "processing_method"=>"direct",
-    #  "checkout_id"=>5972818243,
-    #  "source_name"=>"web",
-    #  "fulfillment_status"=>nil,
-    #  "tax_lines"=>[{"title"=>"GST", "price"=>"1.94", "rate"=>0.1}],
-    #  "tags"=>"",
-    #  "contact_email"=>"jonny@30acres.com.au",
-    #  "line_items"=>
-    #   [{"id"=>4274797315,
-    #     "variant_id"=>nil,
-    #     "title"=>"Ada Tunic - Dark Grey",
-    #     "quantity"=>1,
-    #     "price"=>"20.00",
-    #     "grams"=>200,
-    #     "sku"=>"W13ADATUNICDG - 10",
-    #     "variant_title"=>"10",
-    #     "vendor"=>"Boom Shankar",
-    #     "fulfillment_service"=>"manual",
-    #     "product_id"=>nil,
-    #     "requires_shipping"=>true,
-    #     "taxable"=>true,
-    #     "gift_card"=>false,
-    #     "name"=>"Ada Tunic - Dark Grey - 10",
-    #     "variant_inventory_management"=>nil,
-    #     "properties"=>[],
-    #     "product_exists"=>false,
-    #     "fulfillable_quantity"=>1,
-    #     "total_discount"=>"0.00",
-    #     "fulfillment_status"=>nil,
-    #     "tax_lines"=>[{"title"=>"GST", "price"=>"1.94", "rate"=>0.1}],
-    #     "origin_location"=>
-    #      {"id"=>449971907,
-    #       "country_code"=>"AU",
-    #       "province_code"=>"NSW",
-    #       "name"=>"Roarify",
-    #       "address1"=>"17 Lawson St",
-    #       "address2"=>"",
-    #       "city"=>"Byron Bay",
-    #       "zip"=>"2481"},
-    #     "destination_location"=>
-    #      {"id"=>101254211,
-    #       "country_code"=>"AU",
-    #       "province_code"=>"NSW",
-    #       "name"=>"Jonny Dalgleish",
-    #       "address1"=>"63 Centennial Circuit",
-    #       "address2"=>"",
-    #       "city"=>"Byron Bay",
-    #       "zip"=>"2481"}}],
-    #  "shipping_lines"=>
-    #   [{"id"=>2094881027,
-    #     "title"=>"Standard Shipping",
-    #     "price"=>"10.00",
-    #     "code"=>"Standard Shipping",
-    #     "source"=>"shopify",
-    #     "phone"=>nil,
-    #     "tax_lines"=>[]}],
-    #  "billing_address"=>
-    #   {"first_name"=>"Jonny",
-    #    "address1"=>"63 Centennial Circuit",
-    #    "phone"=>"+61403248955",
-    #    "city"=>"Byron Bay",
-    #    "zip"=>"2481",
-    #    "province"=>"New South Wales",
-    #    "country"=>"Australia",
-    #    "last_name"=>"Dalgleish",
-    #    "address2"=>"",
-    #    "company"=>"30acres",
-    #    "latitude"=>-28.635272,
-    #    "longitude"=>153.578991,
-    #    "name"=>"Jonny Dalgleish",
-    #    "country_code"=>"AU",
-    #    "province_code"=>"NSW"},
-    #  "shipping_address"=>
-    #   {"first_name"=>"Jonny",
-    #    "address1"=>"63 Centennial Circuit",
-    #    "phone"=>"+61403248955",
-    #    "city"=>"Byron Bay",
-    #    "zip"=>"2481",
-    #    "province"=>"New South Wales",
-    #    "country"=>"Australia",
-    #    "last_name"=>"Dalgleish",
-    #    "address2"=>"",
-    #    "company"=>"30acres",
-    #    "latitude"=>-28.635272,
-    #    "longitude"=>153.578991,
-    #    "name"=>"Jonny Dalgleish",
-    #    "country_code"=>"AU",
-    #    "province_code"=>"NSW"},
-    #  "fulfillments"=>[],
-    #  "client_details"=>
-    #   {"browser_ip"=>"203.40.59.47",
-    #    "accept_language"=>"en-US,en;q=0.8,nb;q=0.6",
-    #    "user_agent"=>"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.103 Safari/537.36",
-    #    "session_hash"=>"d32593b7c7adfcf4208e364f3a512d5d",
-    #    "browser_width"=>1190,
-    #    "browser_height"=>667},
-    #  "refunds"=>[],
-    #  "payment_details"=>
-    #   {"credit_card_bin"=>"1", "avs_result_code"=>nil, "cvv_result_code"=>nil, "credit_card_number"=>"•••• •••• •••• 1", "credit_card_company"=>"Bogus"},
-    #  "customer"=>
-    #   {"id"=>1472870723,
-    #    "email"=>"jonny@30acres.com.au",
-    #    "accepts_marketing"=>false,
-    #    "created_at"=>"2015-09-30T07:50:04+10:00",
-    #    "updated_at"=>"2016-02-15T15:45:43+11:00",
-    #    "first_name"=>"Jonny",
-    #    "last_name"=>"Dalgleish",
-    #    "orders_count"=>0,
-    #    "state"=>"enabled",
-    #    "total_spent"=>"0.00",
-    #    "last_order_id"=>nil,
-    #    "note"=>"",
-    #    "verified_email"=>true,
-    #    "multipass_identifier"=>nil,
-    #    "tax_exempt"=>false,
-    #    "tags"=>"boogie loogie",
-    #    "last_order_name"=>nil,
-    #    "default_address"=>
-    #     {"id"=>1588598915,
-    #      "first_name"=>"Jonny",
-    #      "last_name"=>"Dalgleish",
-    #      "company"=>"30acres",
-    #      "address1"=>"63 Centennial Circuit",
-    #      "address2"=>"",
-    #      "city"=>"Byron Bay",
-    #      "province"=>"New South Wales",
-    #      "country"=>"Australia",
-    #      "zip"=>"2481",
-    #      "phone"=>"+61403248955",
-    #      "name"=>"Jonny Dalgleish",
-    #      "province_code"=>"NSW",
-    #      "country_code"=>"AU",
-    #      "country_name"=>"Australia",
-    #      "default"=>true}}}
+    def check_row_type(index)
+      if index == 0
+        :first
+      else
+        :not_first
+      end
+    end
+
+
   end
 end
+

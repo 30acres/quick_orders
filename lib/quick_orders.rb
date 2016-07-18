@@ -2,6 +2,7 @@ require "quick_orders/version"
 require "csv"
 
 module QuickOrders
+  require "csv/csv_helpers"  
   require "csv/shopify_csv"  
   require "csv/order_row"  
 
@@ -10,11 +11,11 @@ module QuickOrders
   end
 
   def self.dump_orders(client)
-    cp = ClientProfile.find(client)
-    cp.raw_datum.destroy_all
+    RawDatum.hold_all
     all_orders_from_source.each do |order|
-      cp.raw_datum.create(data: order.to_json, client_id: client)
+      RawDatum.create(data: order.to_json, client_id: client, status: 3)
     end
+    RawDatum.cleanup
   end
 
   def self.return_csv
@@ -22,3 +23,4 @@ module QuickOrders
   end
 
 end
+

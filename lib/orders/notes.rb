@@ -1,30 +1,37 @@
 module QuickOrders
   class Notes
-    def initialize(order)
-      @order
+    include CsvHelpers
+    def initialize(order,row_type, index)
+      @order = order.data
+      @row_type = row_type
+      @index = index
     end
 
-    def details
-        #  'Notes',
-        # 'Note Attributes',
-        # 'Cancelled at',
-        # 'Payment Method',
-        # 'Payment Reference',
-        # 'Refunded Amount',
-        # 'Vendor',
-        # 'Outstanding Balance',
-        # 'Employee',
-        # 'Location',
-        # 'Device ID',
-        # 'Id',
-        # 'Tags',
-        # 'Risk Level',
-        # 'Source',
-        # 'Lineitem discount',
+    def is_first?
+      @index == :first
+    end
 
-        {
-          notes: 'notes'
-        }
+
+
+    def details
+      {
+        notes: safe(notes),
+        note_attributes: note_attributes,
+        cancelled_at: cancelled_at
+      }
+    end
+
+    def notes
+      # binding.pry
+      @order['note'].to_s + @order['line_items'][0]['properties'].map { |p| "#{p['name']} : #{p['value']}" }.join('|')
+    end
+
+    def note_attributes
+      @order['note_attributes'].join(',')
+    end
+
+    def cancelled_at
+      shopify_date(@order['cancelled_at'])
     end
 
 
